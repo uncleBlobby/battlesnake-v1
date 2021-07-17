@@ -13,15 +13,17 @@ app.post('/end', handleEnd)
 
 app.listen(PORT, () => console.log(`Battlesnake Server listening at http://127.0.0.1:${PORT}`))
 
-
+//GET BATTLESNAKE
 function handleIndex(request, response) {
   let battlesnakeInfo = {
     apiversion: '1',
     author: 'uncleBlobby',
     color: '#123456',
     head: 'default',
-    tail: 'default'
+    tail: 'default',
+    version: '0.0.1-beta'
   }
+  //response sends battlesnakeinfo as JSON 
   response.status(200).json(battlesnakeInfo)
 }
 
