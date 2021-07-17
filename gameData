@@ -1,0 +1,26 @@
+{
+  game: {
+    id: '195f1c16-dd3d-4a2e-8f2e-71df6eecd9a5',
+    timeout: 500,
+    ruleset: { name: 'solo', version: 'cli' }
+  },
+  turn: 7,
+  board: {
+    height: 11,
+    width: 11,
+    food: [ [Object], [Object] ],
+    hazards: [],
+    snakes: [ [Object] ]
+  },
+  you: {
+    id: 'a0775584-1edd-484f-ab42-c8a320290735',
+    name: 'test',
+    health: 94,
+    body: [ [Object], [Object], [Object] ],
+    latency: '0',
+    head: { x: 0, y: 10 },
+    length: 3,
+    shout: '',
+    squad: ''
+  }
+}
