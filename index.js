@@ -27,8 +27,16 @@ function handleIndex(request, response) {
   response.status(200).json(battlesnakeInfo)
 }
 
+
+//start game event
 function handleStart(request, response) {
+  //stores request in gamedata object
   let gameData = request.body
+
+  //gameData.game = object describing the game being played
+  //gameData.turn = integer for current turn number
+  //gameData.board = object describing the initial state of the gameboard
+  //gameData.you = object describing your battlesnake
 
   console.log('START')
   console.log(`live updated`)
@@ -37,6 +45,11 @@ function handleStart(request, response) {
 
 function handleMove(request, response) {
   let gameData = request.body
+  console.log(gameData);
+  //gameData.game = object describing the game being played
+  //gameData.turn = integer for current turn number
+  //gameData.board = object describing the initial state of the gameboard
+  //gameData.you = object describing your battlesnake
 
   let possibleMoves = ['up', 'down', 'left', 'right']
   let move = possibleMoves[Math.floor(Math.random() * possibleMoves.length)]
