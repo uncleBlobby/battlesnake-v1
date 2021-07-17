@@ -29,6 +29,7 @@ function handleStart(request, response) {
   var gameData = request.body
 
   console.log('START')
+  console.log(`live updated`)
   response.status(200).send('ok')
 }
 
