@@ -116,16 +116,16 @@ function handleMove(request, response) {
 
   function checkDirectionForWalls(){
     let head = me.head;
-    if(head.x + 1 > 10){
+    if(head.x + 1 > 9){
       me.unsafeMoves.push('right');
     };
-    if(head.x - 1 < 0){
+    if(head.x - 1 < 1){
       me.unsafeMoves.push('left');
     };
-    if(head.y + 1 > 10){
+    if(head.y + 1 > 9){
       me.unsafeMoves.push('up');
     };
-    if(head.y - 1 < 0){
+    if(head.y - 1 < 1){
       me.unsafeMoves.push('down');
     };
   };
