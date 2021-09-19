@@ -13,6 +13,7 @@ app.post('/end', handleEnd)
 
 app.listen(PORT, () => console.log(`Battlesnake Server listening at http://127.0.0.1:${PORT}`))
 
+
 //GET BATTLESNAKE
 function handleIndex(request, response) {
   let battlesnakeInfo = {
@@ -36,81 +37,135 @@ function handleStart(request, response) {
   console.log(`START GAME data`);
   console.log(gameData);
 
-  
-
-  //gameData.game = object describing the game being played
-  //gameData.turn = integer for current turn number
-  //gameData.board = object describing the initial state of the gameboard
-  //gameData.you = object describing your battlesnake
-
-  console.log('START')
-  console.log(`live updated`)
   response.status(200).send('ok')
 }
 
 function handleMove(request, response) {
   let gameData = request.body;
-  let move;
-  console.log(`gameData Object`)
-  console.log(gameData);
-
   let me = gameData.you;
 
-  console.log(`my info`);
-  console.log(me);
-  console.log(`my head`);
-  console.log(me.head);
-  //gameData.game = object describing the game being played
-  //gameData.turn = integer for current turn number
-  //gameData.board = object describing the initial state of the gameboard
-  //gameData.you = object describing your battlesnake
+  let height = gameData.board.height;
+  let width = gameData.board.width;
 
-  console.log(`board object`);
-  console.log(gameData.board);
+  let boardPositions = height * width;
 
-  //pick a direction, move that direction until you find a wall, then turn any direction EXCEPT the opposite direction
+  let boardArray = [];
 
+  let meArray = [];
 
-  //function to calculate range of available moves around current position
+  me.safeMoves = [];
+  me.unsafeMoves = [];
 
-  function calculateAvailableMoves() {
-    let rangeUp = gameData.board.height - me.head.y -1;
-    let rangeDown = me.head.y;
-    let rangeRight = gameData.board.width - me.head.x -1;
-    let rangeLeft = me.head.x;
-
-    console.log(`range up: ${rangeUp}, range down: ${rangeDown}, range Right: ${rangeRight}, range Left: ${rangeLeft}`);
-
-    let ranges = {"up": rangeUp, "down": rangeDown, "right": rangeRight, "left": rangeLeft};
-    return ranges;
+  for (let i = 0; i < height; i++){
+    for (let j = 0; j < width; j++){
+      boardArray.push({"x": i, "y": j});
+    };
   };
 
-  function makeMove() {
-    let ranges = calculateAvailableMoves();
-    console.log(ranges);
 
-    if(ranges.up > 0){
-      move = 'up';
+
+  /*
+  for (let i = 0; i < boardArray.length; i++){
+    if(boardArray[i].x == 0){
+      boardArray[i].safeMoves = ['down', 'up', 'right'];
     };
-    if(ranges.right > 0){
-      move = 'right';
+    if(boardArray[i].x == 10){
+      boardArray[i].safeMoves = ['down', 'up', 'left'];
     };
-    if(ranges.down > 0){
-      move = 'down';
+    if(boardArray[i].y == 0){
+      boardArray[i].safeMoves = ['left', 'up', 'right'];
     };
-    if(ranges.left > 0){
-      move = 'left';
+    if(boardArray[i].y == 10){
+      boardArray[i].safeMoves = ['left', 'down', 'right'];
     };
-    console.log(`move inside makeMove`);
-    console.log(move);
-    return move;
+    if((boardArray[i].x != 0) && (boardArray[i].x != 10) && (boardArray[i].y != 0) && (boardArray[i].y != 10)){
+      boardArray[i].safeMoves = ['left', 'down', 'right', 'up'];
+    };
   };
 
-  //makeMove();
+  // find my head on gameboard
+  // check for walls and add safemoves to my safemoves
+  for (let i = 0; i < boardArray.length; i++){
+    if((boardArray[i].x == me.head.x) && (boardArray[i].y == me.head.y)){
+      me.safeMoves = boardArray[i].safeMoves;
+    };
+  };
+  */
+  // compare head position to body position
+  // remove body positions from save moves
 
-  console.log('MOVE: ' + move)
+  me.unsafeMoves = [];
+
+  function checkHeadAgainstBody(){
+
+    for (let i =0; i < me.body.length; i++){
+      if(me.body[i].x == me.head.x + 1){
+        me.unsafeMoves.push('right');
+      };
+      if(me.body[i].x == me.head.x - 1){
+        me.unsafeMoves.push('left');
+      };
+      if(me.body[i].y == me.head.y + 1){
+        me.unsafeMoves.push('up');
+      };
+      if(me.body[i].y == me.head.y - 1){
+        me.unsafeMoves.push('down');
+      };
+    };
+  };
+
+  let superSafeMoves = [];
+
+  function removeSafeMovesThatAreUnsafe(){
+
+    for(let i = 0; i < me.safeMoves.length; i++){
+      for(let j = 0; j < me.unsafeMoves.length; j++){
+        if(me.safeMoves[i] == me.unsafeMoves[j]){
+          me.safeMoves.splice(i, 1);
+        };
+      };
+    };
+  };
+
+  //removeSafeMovesThatAreUnsafe();
+  //check head against walls
+
+  function checkHeadAgainstWalls(){
+    if(me.head.x == 0){
+      me.unsafeMoves.push('left');
+    };
+    if(me.head.x == 10){
+      me.unsafeMoves.push('right');
+    };
+    if(me.head.y == 0){
+      me.unsafeMoves.push('down');
+    };
+    if(me.head.y == 10){
+      me.unsafeMoves.push('up');
+    };
+  };
+
+  me.safeMoves = ['left', 'down', 'right', 'up'];
+
+  
+  checkHeadAgainstBody();
+  removeSafeMovesThatAreUnsafe();
+  checkHeadAgainstWalls();
+  removeSafeMovesThatAreUnsafe();
+
+
+
+  console.log(boardArray);
+  console.log(boardArray.length);
+
+  console.log(`board positions: ${boardPositions}`);
+  console.log(me);  
+  console.log(me.safeMoves);
+  console.log(me.unsafeMoves);
+
+  let randomSafeMove = me.safeMoves[Math.floor(Math.random()*me.safeMoves.length)];
   response.status(200).send({
-    move: makeMove()
+    move: randomSafeMove
   })
 }
 
