@@ -44,6 +44,8 @@ function handleMove(request, response) {
   let gameData = request.body;
   let me = gameData.you;
 
+  let board = gameData.board;
+
   let height = gameData.board.height;
   let width = gameData.board.width;
 
@@ -116,77 +118,20 @@ function handleMove(request, response) {
 
   function checkDirectionForWalls(){
     let head = me.head;
-    if(head.x + 1 > 9){
+    if(head.x + 1 > width - 1 ){
       me.unsafeMoves.push('right');
     };
-    if(head.x - 1 < 1){
+    if(head.x - 1 < 0){
       me.unsafeMoves.push('left');
     };
-    if(head.y + 1 > 9){
+    if(head.y + 1 > height - 1){
       me.unsafeMoves.push('up');
     };
-    if(head.y - 1 < 1){
+    if(head.y - 1 < 0){
       me.unsafeMoves.push('down');
     };
   };
 
-  function checkDirectionForSelf(){
-    let head = me.head;
-    let body = me.body;
-    let radius = 1;
-    if(head.x + radius == body[1].x){
-      me.unsafeMoves.push('right');
-    };
-    if(head.x - radius == body[1].x){
-      me.unsafeMoves.push('left');
-    };
-    if(head.y + radius == body[1].y){
-      me.unsafeMoves.push('up');
-    };
-    if(head.y - radius == body[1].y){
-      me.unsafeMoves.push('down');
-    };
-  };
-
-  function checkDirectionForSelf3(){
-    let head = me.head;
-    let body = me.body;
-    if(body.length > 3){
-      let radius = 1;
-      if((head.x + radius == body[3].x) && (head.y == body[3].y)){
-        me.unsafeMoves.push('right');
-      };
-      if((head.x - radius == body[3].x) && (head.y == body[3].y)){
-        me.unsafeMoves.push('left');
-      };
-      if((head.x == body[3].x) && (head.y + radius == body[3].y)){
-        me.unsafeMoves.push('up');
-      };
-      if((head.x == body[3].x) && (head.y - radius == body[3].y)){
-        me.unsafeMoves.push('down');
-      };
-    };
-  };
-
-  function checkDirectionForSelf5(){
-    let head = me.head;
-    let body = me.body;
-    if(body.length > 5){
-      let radius = 1;
-      if((head.x + radius == body[5].x) && (head.y == body[5].y)){
-        me.unsafeMoves.push('right');
-      };
-      if((head.x - radius == body[5].x) && (head.y == body[5].y)){
-        me.unsafeMoves.push('left');
-      };
-      if((head.x == body[5].x) && (head.y + radius == body[5].y)){
-        me.unsafeMoves.push('up');
-      };
-      if((head.x == body[5].x) && (head.y - radius == body[5].y)){
-        me.unsafeMoves.push('down');
-      };
-    };
-  };
 
   function checkDirectionForAnyLength(){
     let head = me.head;
@@ -205,9 +150,30 @@ function handleMove(request, response) {
       if((head.x == body[i].x) && (head.y - radius == body[i].y)){
         me.unsafeMoves.push('down');
       };
-    }
-  }
+    };
+  };
 
+  function checkDirectionForAnySnake(){
+    let head = me.head;
+    //let snakes = [];
+    for(let i = 1; i < board.snakes.length; i++){
+      for(let j = 0; j < board.snakes[i].body.length; j++){
+        if((head.x + 1 == board.snakes[i].body[j].x) && (head.y == board.snakes[i].body[j].y)){
+          me.unsafeMoves.push('right');
+        };
+        if((head.x - 1 == board.snakes[i].body[j].x) && (head.y == board.snakes[i].body[j].y)){
+          me.unsafeMoves.push('left');
+        };
+        if((head.y + 1 == board.snakes[i].body[j].y) && (head.x == board.snakes[i].body[j].x)){
+          me.unsafeMoves.push('up');
+        };
+        if((head.y - 1 == board.snakes[i].body[j].y) && (head.x == board.snakes[i].body[j].x)){
+          me.unsafeMoves.push('down');
+        };
+      };
+    };
+  };
+  checkDirectionForAnySnake();
   //checkHeadAgainstBody();
   //checkTurnBackIntoSelf();
   //removeSafeMovesThatAreUnsafe();
@@ -217,6 +183,7 @@ function handleMove(request, response) {
   //checkDirectionForSelf3();
   //checkDirectionForSelf5();
   checkDirectionForAnyLength();
+
   removeSafeMovesThatAreUnsafe();
   
   console.log(me);  
