@@ -184,3 +184,8 @@ You can also join the Battlesnake Developer Community on [Slack](https://play.ba
 ### Feedback
 
 * **Do you have an issue or suggestions for this repository?** Head over to our [Feedback Repository](https://play.battlesnake.com/feedback) today and let us know!
+
+
+running locally:
+
+battlesnake play -W 11 -H 11 --name test --url http://127.0.0.1:3000  -g solo -v
