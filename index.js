@@ -3,6 +3,8 @@ const express = require('express')
 
 const PORT = process.env.PORT || 3000
 
+const HOST = process.env.HOST || "127.0.0.1" 
+
 const app = express()
 app.use(bodyParser.json())
 
@@ -11,7 +13,7 @@ app.post('/start', handleStart)
 app.post('/move', handleMove)
 app.post('/end', handleEnd)
 
-app.listen(PORT, () => console.log(`Battlesnake Server listening at http://127.0.0.1:${PORT}`))
+app.listen(PORT, HOST, () => console.log(`Battlesnake Server listening at http://${HOST}:${PORT}`))
 
 
 //GET BATTLESNAKE
