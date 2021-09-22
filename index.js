@@ -1,5 +1,6 @@
 const bodyParser = require('body-parser')
 const express = require('express')
+const fs = require('fs')
 
 const PORT = process.env.PORT || 3000
 
@@ -194,6 +195,13 @@ function handleMove(request, response) {
 
   let randomSafeMove = me.safeMoves[Math.floor(Math.random()*me.safeMoves.length)];
 
+  //let fileInput = JSON.stringify(gameData, null, 2);
+/*
+  fs.writeFile('log.txt', fileInput, function (err) {
+    if (err) return console.log(err);
+    console.log(`fileInput > log.txt`);
+  });
+*/
   console.log(`last move: ${randomSafeMove}`);
   response.status(200).send({
     move: randomSafeMove
@@ -202,6 +210,13 @@ function handleMove(request, response) {
 
 function handleEnd(request, response) {
   let gameData = request.body
+  
+  let fileInput = JSON.stringify(gameData, null, 2);
+
+  fs.writeFile('log.txt', fileInput, function (err) {
+    if (err) return console.log(err);
+    console.log(`logging game data: fileInput > log.txt`);
+  });
 
   console.log('END')
   response.status(200).send('ok')
