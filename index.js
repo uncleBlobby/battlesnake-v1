@@ -158,6 +158,7 @@ function handleMove(request, response) {
 
   function checkDirectionForAnySnake(){
     let head = me.head;
+    let board = gameData.board;
     //let snakes = [];
     for(let i = 1; i < board.snakes.length; i++){
       for(let j = 0; j < board.snakes[i].body.length; j++){
