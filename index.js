@@ -142,7 +142,7 @@ function handleMove(request, response) {
           console.log(`snake found, can't move right`);
           me.unsafeMoves.push('right');
         };
-        if((head.x + 2 == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+        if((head.x + 2 == snakes[i].body[0].x) && (head.y == snakes[i].body[0].y)){
           console.log(`snake over there, right is risky`);
           me.riskyMoves.push('right');
         };
@@ -151,7 +151,7 @@ function handleMove(request, response) {
           console.log(`snake found, can't move left`);
           me.unsafeMoves.push('left');
         };
-        if((head.x - 2 == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+        if((head.x - 2 == snakes[i].body[0].x) && (head.y == snakes[i].body[0].y)){
           console.log(`snake over there, left is risky`);
           me.riskyMoves.push('left');
         };
@@ -160,7 +160,7 @@ function handleMove(request, response) {
           console.log(`snake found, can't move up`);
           me.unsafeMoves.push('up');
         };
-        if((head.y + 2 == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+        if((head.y + 2 == snakes[i].body[0].y) && (head.x == snakes[i].body[0].x)){
           console.log(`snake over there, up is risky`);
           me.riskyMoves.push('up');
         };
@@ -169,7 +169,7 @@ function handleMove(request, response) {
           console.log(`snake found, can't move down`);
           me.unsafeMoves.push('down');
         };
-        if((head.y - 2 == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+        if((head.y - 2 == snakes[i].body[0].y) && (head.x == snakes[i].body[0].x)){
           console.log(`snake over there, down is risky`);
           me.riskyMoves.push('down');
         };
@@ -291,6 +291,45 @@ function handleMove(request, response) {
     };
   };
 
+  me.avoidThisToAvoidCorner = [];
+  function makeSureYouDontCornerYourself(){
+    if(me.head.x == 0 && me.head.y == 1){
+      me.avoidThisToAvoidCorner.push('down');
+    }
+    if(me.head.x == 1 && me.head.y == 0){
+      me.avoidThisToAvoidCorner.push('left');
+    }
+    if(me.head.x == width - 2 && me.head.y == 0){
+      me.avoidThisToAvoidCorner.push('right');
+    };
+    if(me.head.x == width - 1 && me.head.y == 1){
+      me.avoidThisToAvoidCorner.push('down');
+    };
+    if(me.head.x == 0 && me.head.y == height - 2){
+      me.avoidThisToAvoidCorner.push('up');
+    };
+    if(me.head.x == 1 && me.head.y == height - 1){
+      me.avoidThisToAvoidCorner.push('left');
+    };
+    if(me.head.x == width - 2 && me.head.y == height - 1){
+      me.avoidThisToAvoidCorner.push('right');
+    };
+    if(me.head.x == width - 1 && me.head.y == height - 2){
+      me.avoidThisToAvoidCorner.push('up');
+    };
+
+  };
+
+  function tryToAvoidCorners(){
+    if(me.safeMoves.length > 1 && me.avoidThisToAvoidCorner.length > 0){
+      for(let i = 0; i < me.avoidThisToAvoidCorner.length; i++){
+        if(me.safeMoves.includes(me.avoidThisToAvoidCorner[i])){
+          me.safeMoves.splice(me.avoidThisToAvoidCorner[i], 1);
+        };
+      };
+    };
+  };
+
   function moveSelector(){
     if(me.safeMoves.length > 1){
       randomSafeMove = me.safeMoves[Math.floor(Math.random()*me.safeMoves.length)];
@@ -318,8 +357,9 @@ function handleMove(request, response) {
     checkIfMovesOutOfHazardSafe();
   };
   */
- 
+
   checkIfAnySafeMovesAreNotRiskyMoves();
+  tryToAvoidCorners();
   
   console.log(me);  
   console.log(me.safeMoves);
