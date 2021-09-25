@@ -44,67 +44,21 @@ function handleStart(request, response) {
 }
 
 function handleMove(request, response) {
+  // init gameData variable on each turn to accept board and game state
   let gameData = request.body;
+  // init me variable to isolate self object
   let me = gameData.you;
 
-  let board = gameData.board;
-
+  // init variables to store height and width of gameboard
   let height = gameData.board.height;
   let width = gameData.board.width;
 
-  let boardPositions = height * width;
-
-  let boardArray = [];
-
-  let meArray = [];
-
-  me.safeMoves = [];
-  me.unsafeMoves = [];
-
-  for (let i = 0; i < height; i++){
-    for (let j = 0; j < width; j++){
-      boardArray.push({"x": i, "y": j});
-    };
-  };
-
-
-
-  /*
-  for (let i = 0; i < boardArray.length; i++){
-    if(boardArray[i].x == 0){
-      boardArray[i].safeMoves = ['down', 'up', 'right'];
-    };
-    if(boardArray[i].x == 10){
-      boardArray[i].safeMoves = ['down', 'up', 'left'];
-    };
-    if(boardArray[i].y == 0){
-      boardArray[i].safeMoves = ['left', 'up', 'right'];
-    };
-    if(boardArray[i].y == 10){
-      boardArray[i].safeMoves = ['left', 'down', 'right'];
-    };
-    if((boardArray[i].x != 0) && (boardArray[i].x != 10) && (boardArray[i].y != 0) && (boardArray[i].y != 10)){
-      boardArray[i].safeMoves = ['left', 'down', 'right', 'up'];
-    };
-  };
-
-  // find my head on gameboard
-  // check for walls and add safemoves to my safemoves
-  for (let i = 0; i < boardArray.length; i++){
-    if((boardArray[i].x == me.head.x) && (boardArray[i].y == me.head.y)){
-      me.safeMoves = boardArray[i].safeMoves;
-    };
-  };
-  */
-  // compare head position to body position
-  // remove body positions from save moves
-
+  // init array to hold unsafe moves ( moves that will lead directly to death )
+  // init array to hold potential safe moves
   me.unsafeMoves = [];
   me.safeMoves = ['left', 'down', 'right', 'up'];
 
-
-  let superSafeMoves = [];
-
+  // function compares safeMoves array against unsafeMoves array and returns only those moves that do not == unsafemoves
   function removeSafeMovesThatAreUnsafe(){
 
     for(let i = 0; i < me.unsafeMoves.length; i++){
@@ -135,8 +89,10 @@ function handleMove(request, response) {
     };
   };
 
+  // loop through my own body to determine if any directions lead to self collision...
+  // if so, add that direction to unsafe move list
 
-  function checkDirectionForAnyLength(){
+  function checkDirectionForAnyLengthSELF(){
     let head = me.head;
     let body = me.body;
     let radius = 1;
@@ -156,38 +112,55 @@ function handleMove(request, response) {
     };
   };
 
+  // loop through all snakes on the board (snakes.length) 
+  // and loop through their bodies (snakes[].body[])
+  // to determine if any directions lead to snake collision...
+  // if so add that direction to unsafe move list
+
   function checkDirectionForAnySnake(){
+    // head == current position of my head
     let head = me.head;
+    // board == latest update for the board object
     let board = gameData.board;
-    //let snakes = [];
-    for(let i = 1; i < board.snakes.length; i++){
-      for(let j = 0; j < board.snakes[i].body.length; j++){
-        if((head.x + 1 == board.snakes[i].body[j].x) && (head.y == board.snakes[i].body[j].y)){
+    // snakes == latest update on snake information
+    let snakes = board.snakes;
+    // rename movements for readability
+    let iMoveRight = head.x + 1;
+    let iMoveLeft = head.x - 1;
+    let iMoveUp = head.y + 1;
+    let iMoveDown = head.y - 1;
+    // loop through all snakes except the one in array position zero (self)
+    for(let i = 1; i < snakes.length; i++){
+      // loop through each of those snakes' body for the length of their body
+      for(let j = 0; j < snakes[i].body.length; j++){
+        // if I move my head one square right and it equals the x position of any snakes body, 
+        // and they're also on the same y position as me, add right to unsafe moves..
+        if((iMoveRight == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+          console.log(`snake found, can't move right`);
           me.unsafeMoves.push('right');
         };
-        if((head.x - 1 == board.snakes[i].body[j].x) && (head.y == board.snakes[i].body[j].y)){
+        // ditto for left
+        if((iMoveLeft == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+          console.log(`snake found, can't move left`);
           me.unsafeMoves.push('left');
         };
-        if((head.y + 1 == board.snakes[i].body[j].y) && (head.x == board.snakes[i].body[j].x)){
+        // up
+        if((iMoveUp == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+          console.log(`snake found, can't move up`);
           me.unsafeMoves.push('up');
         };
-        if((head.y - 1 == board.snakes[i].body[j].y) && (head.x == board.snakes[i].body[j].x)){
+        // down
+        if((iMoveDown == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+          console.log(`snake found, can't move down`);
           me.unsafeMoves.push('down');
         };
       };
     };
   };
-  checkDirectionForAnySnake();
-  //checkHeadAgainstBody();
-  //checkTurnBackIntoSelf();
-  //removeSafeMovesThatAreUnsafe();
-  //checkHeadAgainstWalls();
-  checkDirectionForWalls();
-  //checkDirectionForSelf();
-  //checkDirectionForSelf3();
-  //checkDirectionForSelf5();
-  checkDirectionForAnyLength();
 
+  checkDirectionForWalls();
+  checkDirectionForAnyLengthSELF();
+  checkDirectionForAnySnake();
   removeSafeMovesThatAreUnsafe();
   
   console.log(me);  
@@ -196,13 +169,6 @@ function handleMove(request, response) {
 
   let randomSafeMove = me.safeMoves[Math.floor(Math.random()*me.safeMoves.length)];
 
-  //let fileInput = JSON.stringify(gameData, null, 2);
-/*
-  fs.writeFile('log.txt', fileInput, function (err) {
-    if (err) return console.log(err);
-    console.log(`fileInput > log.txt`);
-  });
-*/
   console.log(`last move: ${randomSafeMove}`);
   response.status(200).send({
     move: randomSafeMove
