@@ -136,18 +136,22 @@ function handleMove(request, response) {
         // if I move my head one square right and it equals the x position of any snakes body, 
         // and they're also on the same y position as me, add right to unsafe moves..
         if((iMoveRight == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+          console.log(`snake found, can't move right`);
           me.unsafeMoves.push('right');
         };
         // ditto for left
         if((iMoveLeft == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+          console.log(`snake found, can't move left`);
           me.unsafeMoves.push('left');
         };
         // up
         if((iMoveUp == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+          console.log(`snake found, can't move up`);
           me.unsafeMoves.push('up');
         };
         // down
         if((iMoveDown == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+          console.log(`snake found, can't move down`);
           me.unsafeMoves.push('down');
         };
       };
