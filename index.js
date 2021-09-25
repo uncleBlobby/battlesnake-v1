@@ -225,18 +225,26 @@ function handleMove(request, response) {
   response.status(200).send({
     move: randomSafeMove
   })
+  /*
+  let fileInput = "\n" + JSON.stringify(gameData, null, 2);
+  fs.appendFileSync('log.txt', fileInput, 'utf-8');
+  console.log(`gameData dumped to log`);
+  */
 }
 
 function handleEnd(request, response) {
   let gameData = request.body
   
-  let fileInput = JSON.stringify(gameData, null, 2);
-
+  let fileInput = "\n" + JSON.stringify(gameData, null, 2);
+  /*
   fs.writeFile('log.txt', fileInput, function (err) {
     if (err) return console.log(err);
     console.log(`logging game data: fileInput > log.txt`);
   });
-
+  */
+  
+  fs.appendFileSync('log.txt', fileInput, 'utf-8');
+  console.log(`gameData dumped to log`);
   console.log('END')
   response.status(200).send('ok')
 }
