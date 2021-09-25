@@ -57,6 +57,7 @@ function handleMove(request, response) {
   // init array to hold potential safe moves
   me.unsafeMoves = [];
   me.safeMoves = ['left', 'down', 'right', 'up'];
+  me.preferredMoves = [];
 
   // function compares safeMoves array against unsafeMoves array and returns only those moves that do not == unsafemoves
   function removeSafeMovesThatAreUnsafe(){
@@ -158,10 +159,61 @@ function handleMove(request, response) {
     };
   };
 
+  // check safe directions for food -- if food exists in one direction, prefer that direction, else just choose random.
+
+  function checkSafeDirectionsForFood(){
+    if (me.safeMoves.length > 1){
+    let food = gameData.board.food;
+    // loop through all food on board
+    for(let i = 0; i < food.length; i++){
+      // loop through each potential safe move and compare it
+      // to each food position x / y
+      for(let j = 0; j < me.safeMoves.length; j++){
+        switch (me.safeMoves[j]) {
+          case 'right':
+            if ((me.head.x + 1 == food[i].x) && (me.head.y == food[i].y)) {
+              if(!(me.preferredMoves.includes('right'))){
+                me.preferredMoves.push('right');
+                console.log(`found food to the right`);
+              };
+            };
+          case 'left':
+            if ((me.head.x - 1 == food[i].x) && (me.head.y == food[i].y)) {
+              if(!(me.preferredMoves.includes('left'))){  
+                me.preferredMoves.push('left');
+                console.log(`found food to the left`);
+              };
+            };
+          case 'up':
+            if ((me.head.x == food[i].x) && (me.head.y + 1 == food[i].y)) {
+              if(!(me.preferredMoves.includes('up'))){
+                me.preferredMoves.push('up');
+                console.log(`found food to the north`);
+              };
+            };
+          case 'down':
+            if ((me.head.x == food[i].x) && (me.head.y - 1 == food[i].y)) {
+              if(!(me.preferredMoves.includes('down'))){
+                me.preferredMoves.push('down');
+                console.log(`found food to the south`);
+              };
+            };
+        };
+      };
+    };
+    if (me.preferredMoves.length > 0) {
+      me.safeMoves = me.preferredMoves;
+      console.log(`overwriting safemoves with preferred moves for food`);
+    };
+
+  };
+  };
+
   checkDirectionForWalls();
   checkDirectionForAnyLengthSELF();
   checkDirectionForAnySnake();
   removeSafeMovesThatAreUnsafe();
+  checkSafeDirectionsForFood();
   
   console.log(me);  
   console.log(me.safeMoves);
