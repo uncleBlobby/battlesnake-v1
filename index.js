@@ -22,9 +22,9 @@ function handleIndex(request, response) {
   let battlesnakeInfo = {
     apiversion: '1',
     author: 'uncleBlobby',
-    color: '#123456',
-    head: 'default',
-    tail: 'default',
+    color: '#FF5733',
+    head: 'shades',
+    tail: 'bolt',
     version: '0.0.1-beta'
   }
   //response sends battlesnakeinfo as JSON 
@@ -131,7 +131,7 @@ function handleMove(request, response) {
     let iMoveUp = head.y + 1;
     let iMoveDown = head.y - 1;
     // loop through all snakes except the one in array position zero (self)
-    for(let i = 1; i < snakes.length; i++){
+    for(let i = 0; i < snakes.length; i++){
       // loop through each of those snakes' body for the length of their body
       for(let j = 0; j < snakes[i].body.length; j++){
         // if I move my head one square right and it equals the x position of any snakes body, 
@@ -209,6 +209,21 @@ function handleMove(request, response) {
   };
   };
 
+  function moveSelector(){
+    if(me.safeMoves.length > 1){
+      randomSafeMove = me.safeMoves[Math.floor(Math.random()*me.safeMoves.length)];
+    } else {
+      randomSafeMove = me.safeMoves[0];
+      shoutOut = "whew!"
+      console.log(`I'M SHOUTING`);
+    };
+    if(me.safeMoves.length == 0){
+      console.log(`no safe moves`);
+      console.log(`moving right`);
+      randomSafeMove = 'right';
+    };
+  };
+
   checkDirectionForWalls();
   checkDirectionForAnyLengthSELF();
   checkDirectionForAnySnake();
@@ -219,7 +234,10 @@ function handleMove(request, response) {
   console.log(me.safeMoves);
   console.log(me.unsafeMoves);
 
-  let randomSafeMove = me.safeMoves[Math.floor(Math.random()*me.safeMoves.length)];
+  let randomSafeMove;
+  let shoutOut = '';
+
+  moveSelector();
 
   console.log(`last move: ${randomSafeMove}`);
   response.status(200).send({
