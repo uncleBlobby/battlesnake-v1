@@ -44,6 +44,7 @@ function handleStart(request, response) {
 }
 
 function handleMove(request, response) {
+  let startTime = Date.now();
   // init gameData variable on each turn to accept board and game state
   let gameData = request.body;
   // init me variable to isolate self object
@@ -359,6 +360,7 @@ function handleMove(request, response) {
   */
 
   checkIfAnySafeMovesAreNotRiskyMoves();
+  makeSureYouDontCornerYourself();
   tryToAvoidCorners();
   
   console.log(me);  
@@ -370,6 +372,9 @@ function handleMove(request, response) {
 
   moveSelector();
 
+  let endTime = Date.now();
+  let timeElapsed = endTime - startTime;
+  console.log(`turn took: ${timeElapsed}ms`);
   console.log(`last move: ${randomSafeMove}`);
   response.status(200).send({
     move: randomSafeMove
