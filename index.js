@@ -285,7 +285,8 @@ function handleMove(request, response) {
       let risky = me.riskyMoves;
         for (let i = 0; i < risky.length; i++){
           if(safe.includes(risky[i])){
-            safe.splice(risky[i], 1);
+            let position = safe.indexOf(risky[i]);
+            safe.splice(position, 1);
           };
         };
         me.safeMoves = safe;
@@ -325,7 +326,8 @@ function handleMove(request, response) {
     if(me.safeMoves.length > 1 && me.avoidThisToAvoidCorner.length > 0){
       for(let i = 0; i < me.avoidThisToAvoidCorner.length; i++){
         if(me.safeMoves.includes(me.avoidThisToAvoidCorner[i])){
-          me.safeMoves.splice(me.avoidThisToAvoidCorner[i], 1);
+          let position = me.safeMoves.indexOf(me.avoidThisToAvoidCorner[i]);
+          me.safeMoves.splice(position, 1);
         };
       };
     };
