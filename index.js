@@ -118,6 +118,8 @@ function handleMove(request, response) {
   // to determine if any directions lead to snake collision...
   // if so add that direction to unsafe move list
 
+  me.riskyMoves = [];
+
   function checkDirectionForAnySnake(){
     // head == current position of my head
     let head = me.head;
@@ -140,20 +142,36 @@ function handleMove(request, response) {
           console.log(`snake found, can't move right`);
           me.unsafeMoves.push('right');
         };
+        if((head.x + 2 == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+          console.log(`snake over there, right is risky`);
+          me.riskyMoves.push('right');
+        };
         // ditto for left
         if((iMoveLeft == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
           console.log(`snake found, can't move left`);
           me.unsafeMoves.push('left');
+        };
+        if((head.x - 2 == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+          console.log(`snake over there, left is risky`);
+          me.riskyMoves.push('left');
         };
         // up
         if((iMoveUp == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
           console.log(`snake found, can't move up`);
           me.unsafeMoves.push('up');
         };
+        if((head.y + 2 == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+          console.log(`snake over there, up is risky`);
+          me.riskyMoves.push('up');
+        };
         // down
         if((iMoveDown == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
           console.log(`snake found, can't move down`);
           me.unsafeMoves.push('down');
+        };
+        if((head.y - 2 == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+          console.log(`snake over there, down is risky`);
+          me.riskyMoves.push('down');
         };
       };
     };
@@ -198,15 +216,79 @@ function handleMove(request, response) {
                 console.log(`found food to the south`);
               };
             };
+          };
+        };
+      };
+      if (me.preferredMoves.length > 0) {
+        me.safeMoves = me.preferredMoves;
+        console.log(`overwriting safemoves with preferred moves for food`);
+      };
+    };
+  };
+
+  me.currentlyInHazard = false;
+  me.movesOutOfHazard = [];
+  me.fastestRouteOut = null;
+
+  function checkIfHeadInHazard(){
+    if(gameData.board.hazards.length > 0){
+      let hazards = gameData.board.hazards
+      for(let i = 0; i < hazards.length; i++){
+        if((me.head.x == hazards[i].x) && (me.head.y == hazards[i].y)){
+          me.currentlyInHazard = true;
+          console.log(`looks like I'm in the rhubarb`);
+
+          if(me.head.x < 5){
+            me.movesOutOfHazard.push('right', 'up', 'down');
+            me.fastestRouteOut = 'right';
+            return;
+          };
+          if(me.head.x > 5){
+            me.movesOutOfHazard.push('left', 'up', 'down');
+            me.fastestRouteOut = 'left';
+            return;
+          };
+          if(me.head.y < 5){
+            me.movesOutOfHazard.push('up', 'left', 'right');
+            me.fastestRouteOut = 'up';
+            return;
+          };
+          if(me.head.y > 5){
+            me.movesOutOfHazard.push('down', 'left', 'right');
+            me.fastestRouteOut = 'down';
+            return;
+          };
         };
       };
     };
-    if (me.preferredMoves.length > 0) {
-      me.safeMoves = me.preferredMoves;
-      console.log(`overwriting safemoves with preferred moves for food`);
-    };
-
   };
+  me.safeMovesOutOfHazard = [];
+  function checkIfMovesOutOfHazardSafe(){
+    for(let i = 0; i < me.movesOutOfHazard.length; i++){
+      if(me.safeMoves.includes(me.movesOutOfHazard[i])){
+        me.safeMovesOutOfHazard.push(me.movesOutOfHazard[i]);
+        if(me.safeMovesOutOfHazard.length > 0){
+          me.safeMoves = me.safeMovesOutOfHazard;
+        };
+        if((me.fastestRouteOut != null) && (me.safeMoves.includes(me.fastestRouteOut))){
+          me.safeMoves = [];
+          me.safeMoves.push(me.fastestRouteOut);
+        };
+      };
+    };
+  };
+
+  function checkIfAnySafeMovesAreNotRiskyMoves(){
+    if(me.riskyMoves.length > 0){
+      let safe = me.safeMoves;
+      let risky = me.riskyMoves;
+        for (let i = 0; i < risky.length; i++){
+          if(safe.includes(risky[i])){
+            safe.splice(risky[i], 1);
+          };
+        };
+        me.safeMoves = safe;
+    };
   };
 
   function moveSelector(){
@@ -229,6 +311,15 @@ function handleMove(request, response) {
   checkDirectionForAnySnake();
   removeSafeMovesThatAreUnsafe();
   checkSafeDirectionsForFood();
+
+  /*
+  checkIfHeadInHazard();
+  if(me.currentlyInHazard == true){
+    checkIfMovesOutOfHazardSafe();
+  };
+  */
+ 
+  checkIfAnySafeMovesAreNotRiskyMoves();
   
   console.log(me);  
   console.log(me.safeMoves);
