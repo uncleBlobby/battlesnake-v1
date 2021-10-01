@@ -238,7 +238,7 @@ function handleMove(request, response) {
         if((me.head.x == hazards[i].x) && (me.head.y == hazards[i].y)){
           me.currentlyInHazard = true;
           console.log(`looks like I'm in the rhubarb`);
-
+          shoutOut = "Looks like I'm in the rhubarb."
           if(me.head.x < 5){
             me.movesOutOfHazard.push('right', 'up', 'down');
             me.fastestRouteOut = 'right';
@@ -333,6 +333,42 @@ function handleMove(request, response) {
     };
   };
 
+  // prefer not sauce
+
+  me.avoidSauceIfPossible = [];
+
+  function preferNotSauce(){
+    let head = me.head;
+    let sauce = gameData.board.hazards;
+    for(let i = 0; i < sauce.length; i++){
+      if((head.x + 1 == sauce[i].x) && (head.y == sauce[i].y)){
+        me.avoidSauceIfPossible.push('right');
+      };
+      if((head.x - 1 == sauce[i].x) && (head.y == sauce[i].y)){
+        me.avoidSauceIfPossible.push('left');
+      };
+      if((head.y + 1 == sauce[i].y) && (head.x == sauce[i].x)){
+        me.avoidSauceIfPossible.push('up');
+      };
+      if((head.y - 1 == sauce[i].y) && (head.x == sauce[i].x)){
+        me.avoidSauceIfPossible.push('down');
+      };
+    };
+    removeSauceMovesIfPossible();
+  };
+
+  function removeSauceMovesIfPossible(){
+    if(me.safeMoves.length > 1){
+      for(let i = 0; i < me.removeSauceMovesIfPossible.length; i++){
+        if(me.safeMoves.includes(me.removeSauceMovesIfPossible[i])){
+          let position = me.safeMoves.indexOf(me.removeSauceMovesIfPossible[i]);
+          me.safe.splice(position, 1);
+        };
+      };
+    };
+  };
+    
+
   function moveSelector(){
     if(me.safeMoves.length > 1){
       randomSafeMove = me.safeMoves[Math.floor(Math.random()*me.safeMoves.length)];
@@ -364,6 +400,7 @@ function handleMove(request, response) {
   checkIfAnySafeMovesAreNotRiskyMoves();
   makeSureYouDontCornerYourself();
   tryToAvoidCorners();
+  preferNotSauce();
   
   console.log(me);  
   console.log(me.safeMoves);
@@ -376,6 +413,9 @@ function handleMove(request, response) {
 
   let endTime = Date.now();
   let timeElapsed = endTime - startTime;
+  let turnTimes = [];
+  turnTimes.push(timeElapsed);
+  
   console.log(`turn took: ${timeElapsed}ms`);
   console.log(`last move: ${randomSafeMove}`);
   response.status(200).send({
