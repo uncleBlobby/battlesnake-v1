@@ -359,9 +359,9 @@ function handleMove(request, response) {
 
   function removeSauceMovesIfPossible(){
     if(me.safeMoves.length > 1){
-      for(let i = 0; i < me.removeSauceMovesIfPossible.length; i++){
-        if(me.safeMoves.includes(me.removeSauceMovesIfPossible[i])){
-          let position = me.safeMoves.indexOf(me.removeSauceMovesIfPossible[i]);
+      for(let i = 0; i < me.avoidSauceIfPossible.length; i++){
+        if(me.safeMoves.includes(me.avoidSauceIfPossible[i])){
+          let position = me.safeMoves.indexOf(me.avoidSauceIfPossible[i]);
           me.safe.splice(position, 1);
         };
       };
