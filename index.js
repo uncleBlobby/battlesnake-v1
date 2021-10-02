@@ -362,7 +362,7 @@ function handleMove(request, response) {
       for(let i = 0; i < me.avoidSauceIfPossible.length; i++){
         if(me.safeMoves.includes(me.avoidSauceIfPossible[i])){
           let position = me.safeMoves.indexOf(me.avoidSauceIfPossible[i]);
-          me.safe.splice(position, 1);
+          me.safeMoves.splice(position, 1);
         };
       };
     };
