@@ -358,7 +358,7 @@ function handleMove(request, response) {
   };
 
   function removeSauceMovesIfPossible(){
-    if(me.safeMoves.length > 1){
+    if(me.safeMoves.length > me.avoidSauceIfPossible.length){
       for(let i = 0; i < me.avoidSauceIfPossible.length; i++){
         if(me.safeMoves.includes(me.avoidSauceIfPossible[i])){
           let position = me.safeMoves.indexOf(me.avoidSauceIfPossible[i]);
