@@ -1,6 +1,5 @@
 const bodyParser = require('body-parser')
 const express = require('express')
-const fs = require('fs')
 
 const PORT = process.env.PORT || 3000
 
@@ -16,431 +15,492 @@ app.post('/end', handleEnd)
 
 app.listen(PORT, HOST, () => console.log(`Battlesnake Server listening at http://${HOST}:${PORT}`))
 
-
-//GET BATTLESNAKE
+// GET BATTLESNAKE INFO
 function handleIndex(request, response) {
-  let battlesnakeInfo = {
-    apiversion: '1',
-    author: 'uncleBlobby',
-    color: '#FF5733',
-    head: 'shades',
-    tail: 'bolt',
-    version: '0.0.1-beta'
-  }
-  //response sends battlesnakeinfo as JSON 
-  response.status(200).json(battlesnakeInfo)
-}
+    let battlesnakeInfo = {
+        apiversion: '1',
+        author: 'uncleBlobby',
+        color: '#FF5733',
+        head: 'shades',
+        tail: 'bolt',
+        version: '0.0.2-beta'
+    };
+    response.status(200).json(battlesnakeInfo);
+    console.log(`index handled`);
+};
 
-
-//start game event
+// HANDLE GAME START EVENT
 function handleStart(request, response) {
-  //stores request in gamedata object
-  let gameData = request.body
-
-  console.log(`START GAME data`);
-  console.log(gameData);
-
-  response.status(200).send('ok')
-}
+    //let gameData = request.body;
+    response.status(200).send('ok');
+    console.log(`start handled`);
+};
 
 function handleMove(request, response) {
-  let startTime = Date.now();
-  // init gameData variable on each turn to accept board and game state
-  let gameData = request.body;
-  // init me variable to isolate self object
-  let me = gameData.you;
+    let gameData = request.body;
+    let me = gameData.you;
 
-  // init variables to store height and width of gameboard
-  let height = gameData.board.height;
-  let width = gameData.board.width;
+    let gameH = gameData.board.height;
+    let gameW = gameData.board.width;
 
-  // init array to hold unsafe moves ( moves that will lead directly to death )
-  // init array to hold potential safe moves
-  me.unsafeMoves = [];
-  me.safeMoves = ['left', 'down', 'right', 'up'];
-  me.preferredMoves = [];
+    me.deathMoves = [];
+    me.unsafeMoves = [];
+    me.safeMoves = ['left', 'down', 'right', 'up'];
+    me.riskyMoves = [];
+    me.preferredMoves = [];
+    me.currentlyInHazard = false;
+    me.movesOutOfHazard = [];
+    me.fastestRouteOutOfHazard = null;
+    // if(me.health <= 50) me.starving = true;
+    me.sauceMoves = [];
+    me.chosenMove;
 
-  // function compares safeMoves array against unsafeMoves array and returns only those moves that do not == unsafemoves
-  function removeSafeMovesThatAreUnsafe(){
-
-    for(let i = 0; i < me.unsafeMoves.length; i++){
-      for(let j = 0; j < me.safeMoves.length; j++){
-        if(me.safeMoves[j] == me.unsafeMoves[i]){
-          me.safeMoves.splice(j, 1);
-        };
-      };
-    };
-  };
-
-  // check if +1 in any direction will hit a wall,
-  // if so, add that direction to unsafemoves
-
-  function checkDirectionForWalls(){
-    let head = me.head;
-    if(head.x + 1 > width - 1 ){
-      me.unsafeMoves.push('right');
-    };
-    if(head.x - 1 < 0){
-      me.unsafeMoves.push('left');
-    };
-    if(head.y + 1 > height - 1){
-      me.unsafeMoves.push('up');
-    };
-    if(head.y - 1 < 0){
-      me.unsafeMoves.push('down');
-    };
-  };
-
-  // loop through my own body to determine if any directions lead to self collision...
-  // if so, add that direction to unsafe move list
-
-  function checkDirectionForAnyLengthSELF(){
-    let head = me.head;
-    let body = me.body;
-    let radius = 1;
-    for(let i = 1; i < body.length; i++){
-      if((head.x + radius == body[i].x) && (head.y == body[i].y)){
-        me.unsafeMoves.push('right');
-      };
-      if((head.x - radius == body[i].x) && (head.y == body[i].y)){
-        me.unsafeMoves.push('left');
-      };
-      if((head.x == body[i].x) && (head.y + radius == body[i].y)){
-        me.unsafeMoves.push('up');
-      };
-      if((head.x == body[i].x) && (head.y - radius == body[i].y)){
-        me.unsafeMoves.push('down');
-      };
-    };
-  };
-
-  // loop through all snakes on the board (snakes.length) 
-  // and loop through their bodies (snakes[].body[])
-  // to determine if any directions lead to snake collision...
-  // if so add that direction to unsafe move list
-
-  me.riskyMoves = [];
-
-  function checkDirectionForAnySnake(){
-    // head == current position of my head
-    let head = me.head;
-    // board == latest update for the board object
-    let board = gameData.board;
-    // snakes == latest update on snake information
-    let snakes = board.snakes;
-    // rename movements for readability
-    let iMoveRight = head.x + 1;
-    let iMoveLeft = head.x - 1;
-    let iMoveUp = head.y + 1;
-    let iMoveDown = head.y - 1;
-    // loop through all snakes except the one in array position zero (self)
-    for(let i = 0; i < snakes.length; i++){
-      // loop through each of those snakes' body for the length of their body
-      for(let j = 0; j < snakes[i].body.length; j++){
-        // if I move my head one square right and it equals the x position of any snakes body, 
-        // and they're also on the same y position as me, add right to unsafe moves..
-        if((iMoveRight == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
-          console.log(`snake found, can't move right`);
-          me.unsafeMoves.push('right');
-        };
-        if((head.x + 2 == snakes[i].body[0].x) && (head.y == snakes[i].body[0].y)){
-          console.log(`snake over there, right is risky`);
-          me.riskyMoves.push('right');
-        };
-        // ditto for left
-        if((iMoveLeft == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
-          console.log(`snake found, can't move left`);
-          me.unsafeMoves.push('left');
-        };
-        if((head.x - 2 == snakes[i].body[0].x) && (head.y == snakes[i].body[0].y)){
-          console.log(`snake over there, left is risky`);
-          me.riskyMoves.push('left');
-        };
-        // up
-        if((iMoveUp == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
-          console.log(`snake found, can't move up`);
-          me.unsafeMoves.push('up');
-        };
-        if((head.y + 2 == snakes[i].body[0].y) && (head.x == snakes[i].body[0].x)){
-          console.log(`snake over there, up is risky`);
-          me.riskyMoves.push('up');
-        };
-        // down
-        if((iMoveDown == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
-          console.log(`snake found, can't move down`);
-          me.unsafeMoves.push('down');
-        };
-        if((head.y - 2 == snakes[i].body[0].y) && (head.x == snakes[i].body[0].x)){
-          console.log(`snake over there, down is risky`);
-          me.riskyMoves.push('down');
-        };
-      };
-    };
-  };
-
-  // check safe directions for food -- if food exists in one direction, prefer that direction, else just choose random.
-
-  function checkSafeDirectionsForFood(){
-    if (me.safeMoves.length > 1){
-    let food = gameData.board.food;
-    // loop through all food on board
-    for(let i = 0; i < food.length; i++){
-      // loop through each potential safe move and compare it
-      // to each food position x / y
-      for(let j = 0; j < me.safeMoves.length; j++){
-        switch (me.safeMoves[j]) {
-          case 'right':
-            if ((me.head.x + 1 == food[i].x) && (me.head.y == food[i].y)) {
-              if(!(me.preferredMoves.includes('right'))){
-                me.preferredMoves.push('right');
-                console.log(`found food to the right`);
-              };
-            };
-          case 'left':
-            if ((me.head.x - 1 == food[i].x) && (me.head.y == food[i].y)) {
-              if(!(me.preferredMoves.includes('left'))){  
-                me.preferredMoves.push('left');
-                console.log(`found food to the left`);
-              };
-            };
-          case 'up':
-            if ((me.head.x == food[i].x) && (me.head.y + 1 == food[i].y)) {
-              if(!(me.preferredMoves.includes('up'))){
-                me.preferredMoves.push('up');
-                console.log(`found food to the north`);
-              };
-            };
-          case 'down':
-            if ((me.head.x == food[i].x) && (me.head.y - 1 == food[i].y)) {
-              if(!(me.preferredMoves.includes('down'))){
-                me.preferredMoves.push('down');
-                console.log(`found food to the south`);
-              };
-            };
-          };
-        };
-      };
-      if (me.preferredMoves.length > 0) {
-        me.safeMoves = me.preferredMoves;
-        console.log(`overwriting safemoves with preferred moves for food`);
-      };
-    };
-  };
-
-  me.currentlyInHazard = false;
-  me.movesOutOfHazard = [];
-  me.fastestRouteOut = null;
-
-  function checkIfHeadInHazard(){
-    if(gameData.board.hazards.length > 0){
-      let hazards = gameData.board.hazards
-      for(let i = 0; i < hazards.length; i++){
-        if((me.head.x == hazards[i].x) && (me.head.y == hazards[i].y)){
-          me.currentlyInHazard = true;
-          console.log(`looks like I'm in the rhubarb`);
-          shoutOut = "Looks like I'm in the rhubarb."
-          if(me.head.x < 5){
-            me.movesOutOfHazard.push('right', 'up', 'down');
-            me.fastestRouteOut = 'right';
-            return;
-          };
-          if(me.head.x > 5){
-            me.movesOutOfHazard.push('left', 'up', 'down');
-            me.fastestRouteOut = 'left';
-            return;
-          };
-          if(me.head.y < 5){
-            me.movesOutOfHazard.push('up', 'left', 'right');
-            me.fastestRouteOut = 'up';
-            return;
-          };
-          if(me.head.y > 5){
-            me.movesOutOfHazard.push('down', 'left', 'right');
-            me.fastestRouteOut = 'down';
-            return;
-          };
-        };
-      };
-    };
-  };
-  me.safeMovesOutOfHazard = [];
-  function checkIfMovesOutOfHazardSafe(){
-    for(let i = 0; i < me.movesOutOfHazard.length; i++){
-      if(me.safeMoves.includes(me.movesOutOfHazard[i])){
-        me.safeMovesOutOfHazard.push(me.movesOutOfHazard[i]);
-        if(me.safeMovesOutOfHazard.length > 0){
-          me.safeMoves = me.safeMovesOutOfHazard;
-        };
-        if((me.fastestRouteOut != null) && (me.safeMoves.includes(me.fastestRouteOut))){
-          me.safeMoves = [];
-          me.safeMoves.push(me.fastestRouteOut);
-        };
-      };
-    };
-  };
-
-  function checkIfAnySafeMovesAreNotRiskyMoves(){
-    if(me.riskyMoves.length > 0){
-      let safe = me.safeMoves;
-      let risky = me.riskyMoves;
-        for (let i = 0; i < risky.length; i++){
-          if(safe.includes(risky[i])){
-            let position = safe.indexOf(risky[i]);
-            safe.splice(position, 1);
-          };
-        };
-        me.safeMoves = safe;
-    };
-  };
-
-  me.avoidThisToAvoidCorner = [];
-  function makeSureYouDontCornerYourself(){
-    if(me.head.x == 0 && me.head.y == 1){
-      me.avoidThisToAvoidCorner.push('down');
+    function removeDeathMovesFromSafe() {
+        for(let i = 0; i < me.deathMoves.length; i++){
+            for(let j = 0; j < me.safeMoves.length; j++){
+                if(me.safeMoves[j] == me.deathMoves[i]){
+                    me.safeMoves.splice(j, 1);
+                }
+            }
+        }
+        return me.safeMoves;
     }
-    if(me.head.x == 1 && me.head.y == 0){
-      me.avoidThisToAvoidCorner.push('left');
+
+    function removeRiskyMoves() {
+        if(me.riskyMoves.length > 0) {
+            let safeMoves = me.safeMoves;
+            let risky = me.riskyMoves;
+            for(let i = 0; i < risky.length; i++) {
+                if(safeMoves.includes(risky[i])){
+                    let pos = safeMoves.indexOf(risky[i]);
+                    safeMoves.splice(pos, 1);
+                }
+            }
+            return safeMoves;
+        }
+      return me.safeMoves;
     }
-    if(me.head.x == width - 2 && me.head.y == 0){
-      me.avoidThisToAvoidCorner.push('right');
-    };
-    if(me.head.x == width - 1 && me.head.y == 1){
-      me.avoidThisToAvoidCorner.push('down');
-    };
-    if(me.head.x == 0 && me.head.y == height - 2){
-      me.avoidThisToAvoidCorner.push('up');
-    };
-    if(me.head.x == 1 && me.head.y == height - 1){
-      me.avoidThisToAvoidCorner.push('left');
-    };
-    if(me.head.x == width - 2 && me.head.y == height - 1){
-      me.avoidThisToAvoidCorner.push('right');
-    };
-    if(me.head.x == width - 1 && me.head.y == height - 2){
-      me.avoidThisToAvoidCorner.push('up');
-    };
 
-  };
-
-  function tryToAvoidCorners(){
-    if(me.safeMoves.length > 1 && me.avoidThisToAvoidCorner.length > 0){
-      for(let i = 0; i < me.avoidThisToAvoidCorner.length; i++){
-        if(me.safeMoves.includes(me.avoidThisToAvoidCorner[i])){
-          let position = me.safeMoves.indexOf(me.avoidThisToAvoidCorner[i]);
-          me.safeMoves.splice(position, 1);
+    function removeSauceMovesIfPossible() {
+        if(me.safeMoves.length > me.sauceMoves.length){
+            for(let i = 0; i < me.sauceMoves.length; i++){
+              if(me.safeMoves.includes(me.sauceMoves[i])){
+                let position = me.safeMoves.indexOf(me.sauceMoves[i]);
+                me.safeMoves.splice(position, 1);
+              };
+            };
         };
-      };
-    };
-  };
-
-  // prefer not sauce
-
-  me.avoidSauceIfPossible = [];
-
-  function preferNotSauce(){
-    let head = me.head;
-    let sauce = gameData.board.hazards;
-    for(let i = 0; i < sauce.length; i++){
-      if((head.x + 1 == sauce[i].x) && (head.y == sauce[i].y)){
-        me.avoidSauceIfPossible.push('right');
-      };
-      if((head.x - 1 == sauce[i].x) && (head.y == sauce[i].y)){
-        me.avoidSauceIfPossible.push('left');
-      };
-      if((head.y + 1 == sauce[i].y) && (head.x == sauce[i].x)){
-        me.avoidSauceIfPossible.push('up');
-      };
-      if((head.y - 1 == sauce[i].y) && (head.x == sauce[i].x)){
-        me.avoidSauceIfPossible.push('down');
-      };
-    };
-    removeSauceMovesIfPossible();
-  };
-
-  function removeSauceMovesIfPossible(){
-    if(me.safeMoves.length > me.avoidSauceIfPossible.length){
-      for(let i = 0; i < me.avoidSauceIfPossible.length; i++){
-        if(me.safeMoves.includes(me.avoidSauceIfPossible[i])){
-          let position = me.safeMoves.indexOf(me.avoidSauceIfPossible[i]);
-          me.safeMoves.splice(position, 1);
-        };
-      };
-    };
-  };
+        return me.safeMoves;
+    }
     
+    function checkForNeck() {
+        let head = me.head;
+        let myNeck = me.body[1];
+        if(head.x + 1 == myNeck.x && head.y == myNeck.y){
+            me.deathMoves.push('right');
+        };
+        if(head.x - 1 == myNeck.x && head.y == myNeck.y){
+            me.deathMoves.push('left');
+        };
+        if(head.x == myNeck.x && head.y + 1 == myNeck.y){
+            me.deathMoves.push('up');
+        };
+        if(head.x == myNeck.x && head.y - 1 == myNeck.y){
+            me.deathMoves.push('down');
+        };
 
-  function moveSelector(){
-    if(me.safeMoves.length > 1){
-      randomSafeMove = me.safeMoves[Math.floor(Math.random()*me.safeMoves.length)];
-    } else {
-      randomSafeMove = me.safeMoves[0];
-      shoutOut = "whew!"
-      console.log(`I'M SHOUTING`);
+        return me.deathMoves;
     };
-    if(me.safeMoves.length == 0){
-      console.log(`no safe moves`);
-      console.log(`moving right`);
-      randomSafeMove = 'right';
+
+    function checkForWalls() {
+        let head = me.head;
+        if(head.x + 1 > gameW - 1){
+            me.deathMoves.push('right');
+        };
+        if(head.x - 1 < 0){
+            me.deathMoves.push('left');
+        };
+        if(head.y + 1 > gameH - 1){
+            me.deathMoves.push('up');
+        };
+        if(head.y - 1 < 0){
+            me.deathMoves.push('down');
+        };
+
+        return me.deathMoves;
     };
-  };
 
-  checkDirectionForWalls();
-  checkDirectionForAnyLengthSELF();
-  checkDirectionForAnySnake();
-  removeSafeMovesThatAreUnsafe();
-  checkSafeDirectionsForFood();
+    function checkForSelf() {
+        let head = me.head;
+        let body = me.body;
+        let radius = 1;
+        for(let i = 1; i < body.length; i++){
+            if((head.x + radius == body[i].x) && (head.y == body[i].y)){
+              me.deathMoves.push('right');
+            };
+            if((head.x - radius == body[i].x) && (head.y == body[i].y)){
+              me.deathMoves.push('left');
+            };
+            if((head.x == body[i].x) && (head.y + radius == body[i].y)){
+              me.deathMoves.push('up');
+            };
+            if((head.x == body[i].x) && (head.y - radius == body[i].y)){
+              me.deathMoves.push('down');
+            };
+          };
+        return me.deathMoves;
+    };
 
-  /*
-  checkIfHeadInHazard();
-  if(me.currentlyInHazard == true){
-    checkIfMovesOutOfHazardSafe();
-  };
-  */
+    function checkForSnakes() {
+        let head = me.head;
+        let board = gameData.board;
+        let snakes = board.snakes;
+        let iMoveRight = head.x + 1;
+        let iMoveLeft = head.x - 1;
+        let iMoveUp = head.y + 1;
+        let iMoveDown = head.y - 1;
+        // loop through all snakes except the one in array position zero (self)
+        for(let i = 0; i < snakes.length; i++){
+          // loop through each of those snakes' body for the length of their body
+          for(let j = 0; j < snakes[i].body.length; j++){
+            // if I move my head one square right and it equals the x position of any snakes body, 
+            // and they're also on the same y position as me, add right to unsafe moves..
+            if((iMoveRight == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+              console.log(`snake found, can't move right`);
+              me.deathMoves.push('right');
+            };
+            // ditto for left
+            if((iMoveLeft == snakes[i].body[j].x) && (head.y == snakes[i].body[j].y)){
+              console.log(`snake found, can't move left`);
+              me.deathMoves.push('left');
+            };
+            // up
+            if((iMoveUp == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+              console.log(`snake found, can't move up`);
+              me.deathMoves.push('up');
+            };
+            // down
+            if((iMoveDown == snakes[i].body[j].y) && (head.x == snakes[i].body[j].x)){
+              console.log(`snake found, can't move down`);
+              me.deathMoves.push('down');
+            };
+          };
+        };
+        return me.deathMoves;
+    };
 
-  checkIfAnySafeMovesAreNotRiskyMoves();
-  makeSureYouDontCornerYourself();
-  tryToAvoidCorners();
-  preferNotSauce();
-  
-  console.log(me);  
-  console.log(me.safeMoves);
-  console.log(me.unsafeMoves);
+    function preferFoodIfClose(){
+        if (me.safeMoves.length > 1){
+        let food = gameData.board.food;
+        // loop through all food on board
+        for(let i = 0; i < food.length; i++){
+          // loop through each potential safe move and compare it
+          // to each food position x / y
+          for(let j = 0; j < me.safeMoves.length; j++){
+            switch (me.safeMoves[j]) {
+              case 'right':
+                if ((me.head.x + 1 == food[i].x) && (me.head.y == food[i].y)) {
+                  if(!(me.preferredMoves.includes('right'))){
+                    me.preferredMoves.push('right');
+                    console.log(`found food to the right`);
+                  };
+                };
+              case 'left':
+                if ((me.head.x - 1 == food[i].x) && (me.head.y == food[i].y)) {
+                  if(!(me.preferredMoves.includes('left'))){  
+                    me.preferredMoves.push('left');
+                    console.log(`found food to the left`);
+                  };
+                };
+              case 'up':
+                if ((me.head.x == food[i].x) && (me.head.y + 1 == food[i].y)) {
+                  if(!(me.preferredMoves.includes('up'))){
+                    me.preferredMoves.push('up');
+                    console.log(`found food to the north`);
+                  };
+                };
+              case 'down':
+                if ((me.head.x == food[i].x) && (me.head.y - 1 == food[i].y)) {
+                  if(!(me.preferredMoves.includes('down'))){
+                    me.preferredMoves.push('down');
+                    console.log(`found food to the south`);
+                  };
+                };
+              };
+            };
+          };
+          if (me.preferredMoves.length > 0) {
+            me.safeMoves = me.preferredMoves;
+            console.log(`overwriting safemoves with preferred moves for food`);
+          };
+        };
 
-  let randomSafeMove;
-  let shoutOut = '';
+        return me.safeMoves;
+    };
 
-  moveSelector();
+    function addRiskyMoves(){
+        // head == current position of my head
+        let head = me.head;
+        // board == latest update for the board object
+        let board = gameData.board;
+        // snakes == latest update on snake information
+        let snakes = board.snakes;
+        // loop through all snakes except the one in array position zero (self)
+        for(let i = 0; i < snakes.length; i++){
+            // loop through each of those snakes' body for the length of their body
+            for(let j = 0; j < snakes[i].body.length; j++){
+                // if I move my head one square right and it equals the x position of any snakes body, 
+                // and they're also on the same y position as me, add right to unsafe moves..
+                if((head.x + 2 == snakes[i].body[0].x) && (head.y == snakes[i].body[0].y)){
+                    console.log(`snake over there, right is risky`);
+                    me.riskyMoves.push('right');
+                };
+                // ditto for left
+                if((head.x - 2 == snakes[i].body[0].x) && (head.y == snakes[i].body[0].y)){
+                    console.log(`snake over there, left is risky`);
+                    me.riskyMoves.push('left');
+                };
+                // up
+                if((head.y + 2 == snakes[i].body[0].y) && (head.x == snakes[i].body[0].x)){
+                    console.log(`snake over there, up is risky`);
+                    me.riskyMoves.push('up');
+                };
+                // down
+                if((head.y - 2 == snakes[i].body[0].y) && (head.x == snakes[i].body[0].x)){
+                    console.log(`snake over there, down is risky`);
+                    me.riskyMoves.push('down');
+                };
+            };
+        };
+        return me.riskyMoves;
+    };
 
-  let endTime = Date.now();
-  let timeElapsed = endTime - startTime;
-  let turnTimes = [];
-  turnTimes.push(timeElapsed);
-  
-  console.log(`turn took: ${timeElapsed}ms`);
-  console.log(`last move: ${randomSafeMove}`);
-  response.status(200).send({
-    move: randomSafeMove
-  })
-  /*
-  let fileInput = "\n" + JSON.stringify(gameData, null, 2);
-  fs.appendFileSync('log.txt', fileInput, 'utf-8');
-  console.log(`gameData dumped to log`);
-  */
+    function checkForSauce() {
+        let head = me.head;
+        let sauce = gameData.board.hazards;
+        let sauceDirections = [];
+        for(let i = 0; i < sauce.length; i++){
+            if((head.x + 1 == sauce[i].x) && (head.y == sauce[i].y)){
+              sauceDirections.push('right');
+            };
+            if((head.x - 1 == sauce[i].x) && (head.y == sauce[i].y)){
+              sauceDirections.push('left');
+            };
+            if((head.y + 1 == sauce[i].y) && (head.x == sauce[i].x)){
+              sauceDirections.push('up');
+            };
+            if((head.y - 1 == sauce[i].y) && (head.x == sauce[i].x)){
+              sauceDirections.push('down');
+            };
+        };
+        
+        return sauceDirections;
+    };
+
+    function moveSelector(scoredMoves){
+      let weightedMoves = [];
+        if((scoredMoves[3].score > scoredMoves[2].score) ||
+           (scoredMoves[3].score > scoredMoves[1].score) ||
+           (scoredMoves[3].score > scoredMoves[0].score)){
+             if(me.safeMoves.includes(scoredMoves[3].direction)){
+               weightedMoves.push(scoredMoves[3].direction);
+             }
+           }
+        if((scoredMoves[2].score > scoredMoves[1].score) ||
+           (scoredMoves[2].score > scoredMoves[0].score)){
+             if(me.safeMoves.includes(scoredMoves[2].direction)){
+               weightedMoves.push(scoredMoves[2].direction);
+             }
+           }
+        if((scoredMoves[1].score > scoredMoves[0].score)){
+             if(me.safeMoves.includes(scoredMoves[1].direction)){
+               weightedMoves.push(scoredMoves[1].direction);
+             }
+           }
+        if((scoredMoves[3].score == scoredMoves[0].score)){
+          weightedMoves = [];
+        }
+           //(me.safeMoves.includes(scoredMoves[3].direction))){
+          //return scoredMoves[3].direction;
+        if(weightedMoves.length > 0){
+          me.safeMoves = weightedMoves;
+        }
+        let randomSafeMove;
+        if(me.safeMoves.length > 1){
+          randomSafeMove = me.safeMoves[Math.floor(Math.random()*me.safeMoves.length)];
+        } else {
+          randomSafeMove = me.safeMoves[0];
+        };
+        if(me.safeMoves.length == 0){
+          randomSafeMove = 'right';
+        };
+        return randomSafeMove;
+    };
+
+    me.deathMoves = checkForNeck();
+    me.safeMoves = removeDeathMovesFromSafe();
+    me.deathMoves = checkForWalls();
+    me.safeMoves = removeDeathMovesFromSafe();
+    me.deathMoves = checkForSelf();
+    me.safeMoves = removeDeathMovesFromSafe();
+    me.deathMoves = checkForSnakes();
+    me.safeMoves = removeDeathMovesFromSafe();
+    me.safeMoves = preferFoodIfClose();
+    me.riskyMoves = addRiskyMoves();
+    me.safeMoves = removeRiskyMoves();
+    me.sauceMoves = checkForSauce();
+    me.safeMoves = removeSauceMovesIfPossible();
+
+    //check among safemoves for consequential safe moves
+    //ie if left leads to 3 open moves and up or right only leads to one
+    //choose left
+
+    function lookAhead() {
+      //console.log(`snakes: ${JSON.stringify(gameData.board.snakes)}`)
+      let head = me.head;
+      let leftPosition = {};
+      let downPosition = {};
+      let rightPosition = {};
+      let upPosition = {};
+      //let directions = [leftPosition, downPosition, rightPosition, upPosition];
+
+      // left
+      leftPosition.x = head.x - 1; 
+      leftPosition.y = head.y;
+      leftPosition.score = 0;
+
+      // down
+      downPosition.x = head.x;
+      downPosition.y = head.y - 1;
+      downPosition.score = 0;
+
+      // right
+      rightPosition.x = head.x + 1;
+      rightPosition.y = head.y;
+      rightPosition.score = 0;
+
+      // up 
+      upPosition.x = head.x;
+      upPosition.y = head.y + 1;
+      upPosition.score = 0;
+
+      // look each direction from each available direction
+      // check if destination square is free or occupied (snake)
+
+      // from left
+
+
+
+      function loopThroughAllSnakesCheckIfAtPosition(positionX, positionY){
+        //console.log(`${positionX}, ${positionY}`)
+        let snakes = gameData.board.snakes;
+        //console.log(`${JSON.stringify(snakes)}`)
+        for(let i = 0; i < snakes.length; i++){
+          for(let j = 0; j < snakes[i].body.length; j++){
+            //console.log(`body: ${snakes[i].body[j].x}, ${snakes[i].body[j].y}`)
+            if((positionX == snakes[i].body[j].x) && (positionY == snakes[i].body[j].y)){
+              //console.log(`snake found at ${positionX} ${positionY}`)
+              return -100;
+            }            
+          }
+        }
+        return 1;
+      };
+
+      function checkIfPositionOutOfBounds(positionX, positionY) {
+        if((positionX > 0) || (positionY > 0) || (positionX > gameW) || (positionY > gameH)){
+          return -10;
+        }
+        return 1;
+      }
+
+      function checkIfPositionIsHazard(positionX, positionY) {
+        let hazards = gameData.board.hazards;
+        for(let i = 0; i < hazards.length; i++){
+          if((positionX == hazards[i].x) && (positionY == hazards[i].y)){
+            return -5;
+          }
+        }
+        return 1;
+      }
+
+      leftPosition.score = lookAtNextPositionReturnScore(leftPosition);
+      downPosition.score = lookAtNextPositionReturnScore(downPosition);
+      rightPosition.score = lookAtNextPositionReturnScore(rightPosition);
+      upPosition.score = lookAtNextPositionReturnScore(upPosition);
+
+      function lookAtNextPositionReturnScore(nextPosition){
+        //console.log(`head position: ${JSON.stringify(me.head)}`)
+        //console.log(`looking at ${JSON.stringify(nextPosition)}`)
+        //nextPosition.score = 0;
+        nextPosition.lookLeft = {};
+        nextPosition.lookDown = {};
+        nextPosition.lookRight = {};
+        nextPosition.lookUp = {};
+        if(nextPosition != rightPosition){
+          nextPosition.lookLeft.x = nextPosition.x - 1;
+          nextPosition.lookLeft.y = nextPosition.y;
+          nextPosition.score += checkIfPositionOutOfBounds(nextPosition.lookLeft.x, nextPosition.lookLeft.y)
+          nextPosition.score += loopThroughAllSnakesCheckIfAtPosition(nextPosition.lookLeft.x, nextPosition.lookLeft.y);
+          nextPosition.score += checkIfPositionIsHazard(nextPosition.lookLeft.x, nextPosition.lookLeft.y);
+        }
+        if(nextPosition != upPosition){
+          nextPosition.lookDown.x = nextPosition.x;
+          nextPosition.lookDown.y = nextPosition.y - 1;
+          nextPosition.score += checkIfPositionOutOfBounds(nextPosition.lookDown.x, nextPosition.lookDown.y)
+          nextPosition.score += loopThroughAllSnakesCheckIfAtPosition(nextPosition.lookDown.x, nextPosition.lookDown.y);
+          nextPosition.score += checkIfPositionIsHazard(nextPosition.lookDown.x, nextPosition.lookDown.y);
+        }
+        if(nextPosition != leftPosition){
+          nextPosition.lookRight.x = nextPosition.x + 1;
+          nextPosition.lookRight.y = nextPosition.y;
+          nextPosition.score += checkIfPositionOutOfBounds(nextPosition.lookRight.x, nextPosition.lookRight.y);
+          nextPosition.score += loopThroughAllSnakesCheckIfAtPosition(nextPosition.lookRight.x, nextPosition.lookRight.y);
+          nextPosition.score += checkIfPositionIsHazard(nextPosition.lookRight.x, nextPosition.lookRight.y);
+        }
+        if(nextPosition != downPosition){
+          nextPosition.lookUp.x = nextPosition.x;
+          nextPosition.lookUp.y = nextPosition.y + 1;
+          nextPosition.score += checkIfPositionOutOfBounds(nextPosition.lookUp.x, nextPosition.lookUp.y);
+          nextPosition.score += loopThroughAllSnakesCheckIfAtPosition(nextPosition.lookUp.x, nextPosition.lookUp.y);
+          nextPosition.score += checkIfPositionIsHazard(nextPosition.lookUp.x, nextPosition.lookUp.y);
+        }
+        return nextPosition.score;
+      };
+
+      let unsortedScores = [{direction: 'left',   score: leftPosition.score}, 
+                            {direction: 'down',   score: downPosition.score}, 
+                            {direction: 'right',  score: rightPosition.score}, 
+                            {direction: 'up',     score: upPosition.score}];
+      
+      function returnSortedScoresLowToHigh(unsortedArray){
+        unsortedArray.sort(function (a, b) {
+          return a.score - b.score;
+        })
+        return unsortedArray;
+      }
+    
+      let sortedScores = returnSortedScoresLowToHigh(unsortedScores);
+      return sortedScores;
+    }
+
+    me.lookAheadMoves = lookAhead();
+
+    console.log(`current turn: ${gameData.turn}`);
+    console.log(`looking ahead: ${JSON.stringify(me.lookAheadMoves)}`);
+    console.log(`safe moves: ${JSON.stringify(me.safeMoves)}`);
+
+    me.chosenMove = moveSelector(me.lookAheadMoves);
+
+    console.log(`moving: ${me.chosenMove}`);
+    response.status(200).send({
+
+        move: me.chosenMove
+    });
 }
 
 function handleEnd(request, response) {
-  let gameData = request.body
-  
-  let fileInput = "\n" + JSON.stringify(gameData, null, 2);
-  /*
-  fs.writeFile('log.txt', fileInput, function (err) {
-    if (err) return console.log(err);
-    console.log(`logging game data: fileInput > log.txt`);
-  });
-  */
-  
-  fs.appendFileSync('log.txt', fileInput, 'utf-8');
-  console.log(`gameData dumped to log`);
-  console.log('END')
-  response.status(200).send('ok')
+    //let gameData = request.body;
+    console.log(`END`);
+    response.status(200).send('ok');
 }
