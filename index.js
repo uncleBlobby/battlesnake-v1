@@ -408,7 +408,7 @@ function handleMove(request, response) {
       };
 
       function checkIfPositionOutOfBounds(positionX, positionY) {
-        if((positionX > 0) || (positionY > 0) || (positionX > gameW) || (positionY > gameH)){
+        if((positionX > 0) || (positionY > 0) || (positionX >= gameW) || (positionY >= gameH)){
           return -10;
         }
         return 1;
